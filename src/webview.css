@@ -1,0 +1,15 @@
+/* In webview.css */
+#luckysheet {
+	background-color: var(--joplin-background-color);
+	color: var(--joplin-color);
+	font-size: var(--joplin-font-size);
+	font-family: var(--joplin-font-family);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  overflow: auto;
+}
