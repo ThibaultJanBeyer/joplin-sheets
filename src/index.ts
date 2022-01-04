@@ -1,17 +1,16 @@
 import joplin from 'api'
-import yaml from 'js-yaml'
+import { v4 as uuidv4 } from 'uuid';
 
-interface Settings {
-  options?: {
-    title?: string
-    data?: { [key:string]: any }[]
-  }
-}
+import { Settings } from "./types"
+import { replaceData, parseData, isJSheet } from './handleStrings'
 
-let panel, isCreated, note
+let panel, note
 
-const initPanel = async (): Promise<void> => {
-  // Create the panel object
+const createPanel = async (): Promise<string> => {
+  // unfortunately it's wayyy more reliable to just close and re-create than to re-use a panel :'(
+  const panel = await joplin.views.panels.create(`luckysheet-${uuidv4()}`)
+  await joplin.views.panels.onMessage(panel, handleMessage)
+
   await joplin.views.panels.setHtml(panel, `<div class="container" id="luckysheet"></div>`)
   await joplin.views.panels.addScript(panel, './webview.js')
   await joplin.views.panels.addScript(panel, './webview.css')
@@ -21,40 +20,38 @@ const initPanel = async (): Promise<void> => {
   await joplin.views.panels.addScript(panel, './luckysheet/dist/assets/iconfont/iconfont.css')
   await joplin.views.panels.addScript(panel, './luckysheet/dist/plugins/js/plugin.js')
   await joplin.views.panels.addScript(panel, './luckysheet/dist/luckysheet.umd.js')
-  isCreated = true
+
+  return panel
 }
 
-const parseSettings = (input: string): Settings => {
-  // replace invalid chars, i.e. yaml library don't like TABS
-  const replacedInvalids = input.replace('\t', '  ')
-  const config = replacedInvalids.split('```JSheets\n')[1].split('```')[0]
-  if(!config) return {}
-  const parsed = yaml.load(config)
-  return parsed
+const handleClose = async () => {
+  if(!panel) return
+  await joplin.views.panels.postMessage(panel, { message: 'JSheets_close' })
+  await joplin.views.panels.hide(panel)
+}
+
+const handleOpen = async () => {
+  panel = await createPanel()
+  await joplin.views.panels.postMessage(panel, {
+    message: 'JSheets_init',
+    options: await parseData(note.body)
+  })
+  await joplin.views.panels.show(panel)
 }
 
 const updateView = async () => {
-  const hasJSheets = note?.body?.includes('```JSheets')
-  if (!panel && hasJSheets)
-      panel = await joplin.views.panels.create('luckysheet')
-  if (!hasJSheets) {
-    if (panel) await joplin.views.panels.hide(panel)
-    return
-  }
+  await handleClose()
 
-  const settings = await parseSettings(note.body)
-  console.log("NOTE", note, panel, settings)
-  if (!isCreated) await initPanel()
-  await joplin.views.panels.show(panel)
-  await joplin.views.panels.postMessage(panel, {
-    message: 'JSheets_init',
-    ...settings
-  })
+  note = await joplin.workspace.selectedNote()
+  if (isJSheet(note?.body)) await handleOpen()
 }
 
-const handleSync = async (message) => {
-  console.log(message)
-  // joplin.workspace.
+const handleSync = async ({ jsonData }) => {
+  if (!isJSheet(note?.body)) return
+  console.log("handleSync", jsonData)
+  note.body = replaceData(note.body, JSON.stringify(jsonData))
+  await joplin.commands.execute("editor.setText", note.body);
+  await joplin.data.put(['notes', note.id], null, { body: note.body });
 }
 
 const handleMessage = async (message: {message:string,sheets:any[],jsonData:Settings}) => {
@@ -63,12 +60,6 @@ const handleMessage = async (message: {message:string,sheets:any[],jsonData:Sett
 
 joplin.plugins.register({
   onStart: async () => {
-    note = await joplin.workspace.selectedNote();
-    if (note?.body?.includes('```JSheets'))
-      panel = await joplin.views.panels.create('luckysheet')
-    await joplin.workspace.onNoteSelectionChange(() => updateView())
-    await joplin.views.panels.onMessage(panel, handleMessage)
-    // await joplin.workspace.onNoteChange(() => updateView())
-    updateView()
+    await joplin.workspace.onNoteSelectionChange(updateView)
   },
 })

@@ -1,34 +1,51 @@
-let isInit
+const start = async () => {
+  let stopped = false
+  let processingMessage = false
 
-webviewApi.onMessage(({ message }) => {
-  if(message.message === 'JSheets_init')
-    setTimeout(() => {
-      luckysheet.create(message.options)
-      isInit = true
-    }, 1000)
-})
+  async function init(message) {
+    luckysheet.create(message.options)
+    infiniteSave()
+  }
 
-setInterval(() => {
-  if(!isInit) return
-  webviewApi.postMessage({
-    message: 'JSheets_sync',
-    sheets: luckysheet.getAllSheets(),
-    jsonData: luckysheet.toJson()
+  async function waitForLuckySheet(cb) {
+    while (!luckysheet || !luckysheet.destroy || !luckysheet.create || !webviewApi || !webviewApi.postMessage) {
+      if (stopped) return
+      await new Promise(resolve => setTimeout(() => resolve(), 500))
+    }
+    return await cb()
+  }
+
+  async function infiniteSave() {
+    while (!stopped) {
+      webviewApi.postMessage({
+        message: 'JSheets_sync',
+        sheets: luckysheet.getAllSheets(),
+        jsonData: luckysheet.toJson()
+      })
+      await new Promise(resolve => setTimeout(() => resolve(), 2000))
+    }
+  }
+
+  webviewApi.onMessage(async ({ message }) => {
+    if (processingMessage === message.message)
+      return console.log("ALREADY PROCESSING", message.message)
+
+    processingMessage = message.message
+    if (message.message === 'JSheets_init')
+      stopped = false
+      await waitForLuckySheet(async () => await init(message))
+    if (message.message === 'JSheets_close') {
+      stopped = true
+      await waitForLuckySheet(async () => await luckysheet.destroy())
+    }
+
+    console.log("done-processing")
+    processingMessage = false
   })
-}, 1000);
+}
 
-
-
-// // There are many ways to listen to click events, you can even use
-// // something like jQuery or React. This is how it can be done using
-// // plain JavaScript:
-// document.addEventListener('click', event => {
-// 	const element = event.target;
-// 	if (element.className === 'toc-item-link') {
-// 		// Post the message and slug info back to the plugin:
-// 		webviewApi.postMessage({
-// 			name: 'scrollToHash',
-// 			hash: element.dataset.slug,
-// 		});
-// 	}
-// });
+try {
+  start()
+} catch (err) {
+  console.error(err)
+}

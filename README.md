@@ -4,15 +4,10 @@ Sheets for Joplin
 
 ## How to?
 
-Write the json styled JSheets settings
+Initiate a JSheet by writing following in the markdown:
 
 ```json
-
-\`\`\`JSheets
-options:
-  title: My Awesome Sheet
-\`\`\`
-
+\`\`\`JSheets\`\`\`
 ```
 
-As we're using LuckySheets in the background, the `options` here are passed as is down to the plugin, find all options [in their docs](https://mengshukeji.github.io/LuckysheetDocs/guide/config.html#basic-structure).
+You can now re-open the note and the plugin will initiate
