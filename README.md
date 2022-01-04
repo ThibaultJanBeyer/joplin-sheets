@@ -6,8 +6,8 @@ Sheets for Joplin
 
 Initiate a JSheet by writing following in the markdown:
 
-```json
-\`\`\`JSheets\`\`\`
+```md
+```JSheets```
 ```
 
-You can now re-open the note and the plugin will initiate
+You can now re-open the note and the plugin will load.
