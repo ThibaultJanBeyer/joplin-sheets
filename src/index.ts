@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Settings } from "./types"
 import { replaceData, parseData, isJSheet } from './handleStrings'
 
-let panel, note
+let panel, note, isOpening
 
 const createPanel = async (): Promise<string> => {
   // unfortunately it's wayyy more reliable to just close and re-create than to re-use a panel :'(
@@ -40,14 +40,16 @@ const handleOpen = async () => {
 }
 
 const updateView = async () => {
+  isOpening = true
   await handleClose()
 
   note = await joplin.workspace.selectedNote()
   if (isJSheet(note?.body)) await handleOpen()
+  isOpening = false
 }
 
 const handleSync = async ({ jsonData }) => {
-  if (!isJSheet(note?.body)) return
+  if (!isJSheet(note?.body) || isOpening) return
   console.log("handleSync", jsonData)
   note.body = replaceData(note.body, JSON.stringify(jsonData))
   await joplin.commands.execute("editor.setText", note.body);
