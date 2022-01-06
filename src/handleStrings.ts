@@ -4,7 +4,7 @@ const dataText = 'jsheets-data'
 const dataTextMD = `\`\`\`${dataText}`
 
 export const isJSheet = (input: string): boolean => input.toLocaleLowerCase().includes('```jsheets```')
-export const hasData = (input: string): boolean => input.toLocaleLowerCase().includes(dataTextMD)
+export const hasData = (input: string): boolean => input.toLocaleLowerCase().includes(dataText)
 
 export const parseData = (input: string): Settings => {
   const data = isolateData(input)
@@ -24,5 +24,5 @@ export const replaceData = (input: string, replace: string): string => {
 
 export const isolateData = (input: string): string => {
   if (!hasData(input)) return ''
-  return input.split(dataTextMD)[1].replace('\n', '').trim()
+  return input.split(dataText)[1].replace('\n', '').trim()
 }

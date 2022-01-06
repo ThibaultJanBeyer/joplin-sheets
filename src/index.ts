@@ -32,9 +32,10 @@ const handleClose = async () => {
 
 const handleOpen = async () => {
   panel = await createPanel()
+  const options = await parseData(note.body)
   await joplin.views.panels.postMessage(panel, {
     message: 'JSheets_init',
-    options: await parseData(note.body)
+    options
   })
   await joplin.views.panels.show(panel)
 }
