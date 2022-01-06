@@ -1,6 +1,6 @@
 {
   "name": "joplin-plugin-jsheets",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "scripts": {
     "postinstall": "bin/import.sh",
     "start:dev": "nodemon --watch src --exec yarn start:dist",
