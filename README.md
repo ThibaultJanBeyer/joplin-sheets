@@ -1,6 +1,7 @@
 # JSheets
 
-Implementation of Lucky-Sheets for Joplin. You can now write excel-like notes!
+Implementation of [Luckysheet](https://github.com/mengshukeji/Luckysheet) for Joplin. You can now write excel-like notes!
+Note: [Luckysheet](https://github.com/mengshukeji/Luckysheet) is bundled into the plugin.
 
 ## How to?
 
